@@ -5,7 +5,7 @@ var app = express();
 var _ = require('underscore');
 var _s = require('underscore.string');
 var avosExpressCookieSession = require('avos-express-cookie-session');
-var f = require('cloud/face.js')
+var face = require('cloud/face.js')
 
 // App 全局配置
 app.set('views','cloud/views');   // 设置模板目录
@@ -31,6 +31,42 @@ function fail(res) {
 	}
 }
 
+app.get('/users', function(req, res){
+	var userGeoPoint = new AV.GeoPoint({});
+	var query = new AV.Query('_User');
+	query.near("location", userGeoPoint);
+});
+
+
+function createNewUser(req, res, file, location){
+	console.log("Can't find the user by face_id,so we create a new one.");
+	//register new user.
+	var user = new AV.User();
+	user.set('avartar', file);
+	if(location)
+		user.set('location', location);
+	var gid = u.uuid();
+	user.set('username', gid);
+	user.set('password', gid);
+	user.signUp(null, {
+		success: function(){
+			face.addNewFace(file.url(), function(err, ret){
+				if(err){
+					console.log("Added url to face+ failed" + err);
+					return;
+				}
+				//save face++ result to user.
+				user.set('face_id', ret.face_id);
+				user.set('age', ret.age);
+				user.set('gender', ret.gender);
+				user.save();
+			});
+			user.logIn().then(success(res), fail(res));
+		},
+		error: fail(res)
+	});
+}
+
 app.post('/register', function(req, res) {
 	var b64 = req.body.data;
 	var location = req.body.location;
@@ -42,29 +78,42 @@ app.post('/register', function(req, res) {
 	}
 	var file = new AV.File('avartar.png', {base64: b64});
 	file.save().then(function(){
-		var user = new AV.User();
-		user.set('avartar', file);
-		if(location)
-			user.set('location', location);
-		user.set('username', u.uuid());
-		user.set('password', u.uuid());
-		user.signUp(null, {
-			success: function(){
-				user.logIn().then(success(res), fail(res));
-			},
-			error: fail(res)
+		face.logInByFace(file.url(), function(err, face_id){
+			if(err){
+				return fail(res)();
+			}
+			if(face_id){
+				console.log("Find the face_id  " + face_id);
+				var query = new AV.Query('_User');
+				query.equalTo('face_id', face_id);
+				query.first().then(function(theUser){
+					if(theUser){
+						console.log("Find the user %j by face_id  " + face_id, theUser);
+						var username = theUser.get('username');
+						var pass = username;
+						AV.User.logIn(username, pass, {
+							success: success(res),
+							error: fail(res)
+						});
+					} else {
+						createNewUser(req, res, file, location)
+					}
+				}, fail(res));
+			}else{
+				createNewUser(req, res, file, location)
+			}
 		});
 	}, fail(res));
 });
 
 app.get('/test_face', function(req, res) {
-  f.loginByFace(
-    'http://www.nmg.xinhuanet.com/xwzx/2006-06/18/xin_080603181309250324152.jpg',
-    function(status, r) {
-      console.log(r);
-    }
-  );
-  res.send({});
+	face.loginByFace(
+		'http://www.nmg.xinhuanet.com/xwzx/2006-06/18/xin_080603181309250324152.jpg',
+		function(status, r) {
+			console.log(r);
+		}
+	);
+	res.send({});
 });
 
 // 最后，必须有这行代码来使 express 响应 HTTP 请求
