@@ -3,6 +3,7 @@ var express = require('express');
 var u = require('cloud/util.js');
 var app = express();
 var avosExpressCookieSession = require('avos-express-cookie-session');
+var f = require('cloud/face.js')
 
 // App 全局配置
 app.set('views','cloud/views');   // 设置模板目录
@@ -34,7 +35,7 @@ app.post('/register', function(req, res) {
 	file.save().then(function(){
 		var user = new AV.User();
 		user.set('avartar', file);
-		user.set('username', u.uuid());
+		user.set('user,name', u.uuid());
 		user.set('password', u.uuid());
 		user.signUp(null, {
 			success: function(){
@@ -44,6 +45,16 @@ app.post('/register', function(req, res) {
 			error: fail(res)
 		});
 	}, fail(res));
+});
+
+app.get('/test_face', function(req, res) {
+  f.loginByFace(
+    'http://www.nmg.xinhuanet.com/xwzx/2006-06/18/xin_080603181309250324152.jpg',
+    function(status, r) {
+      console.log(r);
+    }
+  );
+  res.send({});
 });
 
 // 最后，必须有这行代码来使 express 响应 HTTP 请求
