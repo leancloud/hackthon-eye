@@ -2,6 +2,8 @@
 var express = require('express');
 var u = require('cloud/util.js');
 var app = express();
+var _ = require('underscore');
+var _s = require('underscore.string');
 var avosExpressCookieSession = require('avos-express-cookie-session');
 
 // App 全局配置
@@ -30,15 +32,23 @@ function fail(res) {
 
 app.post('/register', function(req, res) {
 	var b64 = req.body.data;
+	var location = req.body.location;
+	if(location && location != ''){
+		var tmps = _.map(location.split(','), function(v){
+			return parseFloat(_s.trim(v));
+		});
+		location = new AV.GeoPoint({latitude: tmps[1], longitude: tmps[0]});
+	}
 	var file = new AV.File('avartar.png', {base64: b64});
 	file.save().then(function(){
 		var user = new AV.User();
 		user.set('avartar', file);
+		if(location)
+			user.set('location', location);
 		user.set('username', u.uuid());
 		user.set('password', u.uuid());
 		user.signUp(null, {
 			success: function(){
-				console.dir(user);
 				user.logIn().then(success(res), fail(res));
 			},
 			error: fail(res)

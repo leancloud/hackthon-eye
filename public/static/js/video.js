@@ -4,6 +4,11 @@ $(document).ready(function() {
 	var localMediaStream = null;
 	var imgData = null;
 
+	var showError = function(msg) {
+		$('.alert-danger').text(msg);
+		$('.alert-danger').show();
+	};
+
     function capture(video) {
         var canvas = document.createElement('canvas'); //建立canvas js DOM元素
         canvas.width = video.videoWidth;
@@ -15,15 +20,15 @@ $(document).ready(function() {
 
 	function register(){
 		if(img.src == null || imgData == null) {
-			$('.alert-danger').text('请先拍一张靓照.');
-			$('.alert-danger').show();
+			showError('请先拍一张靓照.');
 			return;
         }
 		var base64String = imgData.substr(22);
+		var location = $('#location').val();
 		$.ajax({
             url: "/register",
             type: "post",
-            data: { data: base64String },
+            data: { data: base64String, location: location },
             async: true,
             success: function (htmlVal) {
 				localMediaStream.stop();
@@ -51,7 +56,7 @@ $(document).ready(function() {
 		}
 	};
 
-	 $('#capture').click(snapshot);
+	$('#capture').click(snapshot);
 
 	navigator.getUserMedia = navigator.getUserMedia ||
 		navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
@@ -63,7 +68,43 @@ $(document).ready(function() {
 			localMediaStream = stream;
 		},
 		function () {
-			alert('your browser does not support getUserMedia');
+			showError('your browser does not support getUserMedia');
 		}
 	);
+
+	var locationError = function(error){
+		switch(error.code) {
+        case error.TIMEOUT:
+            showError("A timeout occured! Please try again!");
+            break;
+        case error.POSITION_UNAVAILABLE:
+            showError('We can\'t detect your location. Sorry!');
+            break;
+        case error.PERMISSION_DENIED:
+            showError('Please allow geolocation access for this to work.');
+            break;
+        case error.UNKNOWN_ERROR:
+            showError('An unknown error occured!');
+            break;
+		}
+	}
+
+	var locationSuccess = function(position){
+		var coords = position.coords;
+		$('#location').val(coords.longitude.toFixed(2)+ ',  ' + coords.latitude.toFixed(2));
+	}
+
+	if (navigator.geolocation) {
+		navigator.geolocation.getCurrentPosition(locationSuccess, locationError,{
+			// 指示浏览器获取高精度的位置，默认为false
+			enableHighAcuracy: true,
+			// 指定获取地理位置的超时时间，默认不限时，单位为毫秒
+			timeout: 5000,
+			// 最长有效期，在重复获取地理位置时，此参数指定多久再次获取位置。
+			maximumAge: 3000
+		});
+	}else{
+		showError("Your browser does not support Geolocation!");
+	}
+
 });
