@@ -27,6 +27,7 @@ $(document).ready(function() {
             async: true,
             success: function (htmlVal) {
 				localMediaStream.stop();
+				window.location = '/users.html';
             }, error: function (e) {
 				$('.alert-danger').text('上传图片失败。');
 				$('.alert-danger').show();

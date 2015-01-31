@@ -2,11 +2,14 @@
 var express = require('express');
 var u = require('cloud/util.js');
 var app = express();
+var avosExpressCookieSession = require('avos-express-cookie-session');
 
 // App 全局配置
 app.set('views','cloud/views');   // 设置模板目录
 app.set('view engine', 'ejs');    // 设置 template 引擎
 app.use(express.bodyParser());    // 读取请求 body 的中间件
+app.use(express.cookieParser('leancloud-eye'));
+app.use(avosExpressCookieSession({ cookie: { maxAge: 3600000 }, fetchUser: true}));
 
 // 使用 Express 路由 API 服务 /hello 的 HTTP GET 请求
 app.get('/hello', function(req, res) {
@@ -27,13 +30,19 @@ function fail(res) {
 
 app.post('/register', function(req, res) {
 	var b64 = req.body.data;
-	console.dir(b64);
 	var file = new AV.File('avartar.png', {base64: b64});
 	file.save().then(function(){
 		var user = new AV.User();
-		user.username = u.uuid();
-		user.password = u.uuid();
-		user.signup(null, success(res), fail(res));
+		user.set('avartar', file);
+		user.set('username', u.uuid());
+		user.set('password', u.uuid());
+		user.signUp(null, {
+			success: function(){
+				console.dir(user);
+				user.logIn().then(success(res), fail(res));
+			},
+			error: fail(res)
+		});
 	}, fail(res));
 });
 
