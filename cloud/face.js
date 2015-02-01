@@ -46,7 +46,7 @@ exports.getFaces = function (faceId, callback) {
 			api_secret: 'V8ewWd3ZsEaUzGhE45zpcMZj6FeTEEB3',
 			key_face_id: faceId,
 			faceset_name: 'eyes',
-			count: 20,
+			count: 100,
 		},
 		success: function(httpResponse) {
 			o = JSON.parse(httpResponse.text);
