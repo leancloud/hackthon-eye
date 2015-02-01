@@ -27,22 +27,43 @@ function success(res) {
 
 function fail(res) {
 	return function(err) {
-		res.send({error: err.message || err});
+		res.send({error: err});
 	}
 }
 
 app.get('/users', function(req, res){
 	var user = AV.User.current();
+
 	if (user) {
-		var query = new AV.Query('_User');
-		if(user.get('location')){
-			query.near("location", user.get('location'));
-		}
-		query.limit(10);
-		query.find({
-			success: function(users) {
-				res.send(users);
+		face.getFaces(user.get('face_id'), function(err, results) {
+			if(err)
+				return fail(res)();
+			var query = new AV.Query('_User');
+			query.containedIn('face_id', _.map(results, function(cond) {
+				return cond.face_id;
+			}));
+			var simMap = _.reduce(results, function(m,cond) {
+				m[cond.face_id] = cond.similarity;
+				return m;
+			}, {});
+			if(user.get('location')){
+				query.near("location", user.get('location'));
 			}
+			query.limit(10);
+			query.find({
+				success: function(users) {
+					_.each(users, function(user) {
+						user.set('sim', simMap[user.get('face_id')]);
+					});
+					users = _.filter(users, function(user) {
+						return user.id != AV.User.current().id;
+					});
+					users.sort(function(a, b){
+						return a.get('sim') - b.get('sim');
+					});
+					res.send(users);
+				}
+			});
 		});
 	} else {
 		fail(res);
@@ -71,13 +92,21 @@ function createNewUser(req, res, file, location){
 				user.set('face_id', ret.face_id);
 				user.set('age', ret.age);
 				user.set('gender', ret.gender);
-				user.save();
+				user.save().then(function(){
+					user.set('username', gid);
+					user.set('password', gid);
+					user.logIn().then(success(res), fail(res));
+				}, fail(res));
 			});
-			user.logIn().then(success(res), fail(res));
 		},
 		error: fail(res)
 	});
 }
+
+app.get('/logout', function(req, res){
+	AV.User.logOut();
+	return res.redirect('/index.html');
+});
 
 app.post('/register', function(req, res) {
 	var b64 = req.body.data;
