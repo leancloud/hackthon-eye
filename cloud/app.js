@@ -32,10 +32,21 @@ function fail(res) {
 }
 
 app.get('/users', function(req, res){
-	var userGeoPoint = new AV.GeoPoint({});
-	var query = new AV.Query('_User');
-	query.near("location", userGeoPoint);
-});
+	var user = AV.User.current();
+	if (user) {
+		var userGeoPoint = new AV.GeoPoint({});
+		var query = new AV.Query('_User');
+		query.near("location", userGeoPoint);
+		query.limit(10);
+		query.find({
+			success: function(placesObjects) {
+				res.send(placesObjects);
+			}
+		});
+	} else {
+		fail(res);
+	}
+};
 
 
 function createNewUser(req, res, file, location){
@@ -104,6 +115,15 @@ app.post('/register', function(req, res) {
 			}
 		});
 	}, fail(res));
+});
+
+app.get('/chat', function(req,res) {
+	var currentUser = AV.User.currrnt();
+	if (!currentUser) {
+		fail(res);
+	} else {
+		res.send({current: currentUser.get('objectid')});
+	}
 });
 
 app.get('/test_face', function(req, res) {
