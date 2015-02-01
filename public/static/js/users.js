@@ -5,9 +5,9 @@ $(document).ready(function () {
 			var sim = Math.floor(Math.random()*100);
 			$('.table-bordered').append(
 				'<tbody><tr><td><img src=\"'+
-				user.avartar.url
+				user.avartar.url + '?imageView/1/w/100/h/100/q/100/format/png'
 				+'\"></a></td><td>'+
-				99
+				(user.sim || 50)
 				+'</td><td><a href=\"chat.html?go='+
 				user.objectId
 				+'\">Go!</a></td></tr></tbody>');
