@@ -34,19 +34,20 @@ function fail(res) {
 app.get('/users', function(req, res){
 	var user = AV.User.current();
 	if (user) {
-		var userGeoPoint = new AV.GeoPoint({});
 		var query = new AV.Query('_User');
-		query.near("location", userGeoPoint);
+		if(user.get('location')){
+			query.near("location", user.get('location'));
+		}
 		query.limit(10);
 		query.find({
-			success: function(placesObjects) {
-				res.send(placesObjects);
+			success: function(users) {
+				res.send(users);
 			}
 		});
 	} else {
 		fail(res);
 	}
-};
+});
 
 
 function createNewUser(req, res, file, location){

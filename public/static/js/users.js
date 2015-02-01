@@ -4,31 +4,19 @@ $(document).ready(function () {
 			var user = users[i];
 			var sim = Math.floor(Math.random()*100);
 			$('.table-bordered').append(
-				'<tbody>
-				<tr>
-				<td><img src=\"'+
-				user.avartar
-				+'\"></a></td>
-				<td>'+
-				smi
-				+'</td>
-				<td><a herf=\"chat.html?go='+
-				user.objectid
-				+'\"=></a></td>
-				</tr>
-				</tbody>');
+				'<tbody><tr><td><img src=\"'+
+				user.avartar.url
+				+'\"></a></td><td>'+
+				99
+				+'</td><td><a href=\"chat.html?go='+
+				user.objectId
+				+'\">Go!</a></td></tr></tbody>');
 		};
 	}
 
-	$ajax({
-		url: "/users",
-		type: "get",
-		async: true,
-		success: function(data) {
+	$.get(
+		"/users",
+		function(data) {
 			showUsesrs(data);
-		},
-		error: function(e) {
-			alert("网络异常");
-		}
-	});
+		});
 });
