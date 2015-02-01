@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html ng-app="YanApp">
+  <head>
+    <meta charset="UTF-8">
+    <title>Test Chat</title>
+  </head>
+  <body ng-controller="YanCtrl">
+    <p>{{info}}</p>
+    <p>{{err}}</p>
+	<!--<p>{{conv}}</p>-->
+    <div ng-repeat="l in log">
+      <p>{{l}}</p>
+    </div>
+    <input ng-model="input" type="text" />
+    <button ng-click="sendMsg()">send</button>
+	<!--<button ng-click="createConv()">create</button>-->
+    <script src="/static/js/angular.min.js"></script>
+    <script src="/static/js/lc.realtime.js"></script>
+    <script src="/static/js/my-chat.js"></script>
+  </body>
+</html>
