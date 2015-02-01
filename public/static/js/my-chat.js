@@ -16,6 +16,7 @@ function GetRequest() {
             theRequest[strs[i].split("=")[0]]=unescape(strs[i].split("=")[1]);
         }
     }
+    console.log(theRequest.go);
     return theRequest;
 }
 
@@ -25,8 +26,6 @@ YanApp.controller("YanCtrl", function($scope, $http) {
     $scope.sendlog = [];
     $scope.recvlog = [];
     $scope.log = [];
-    //$scope.friend = sessionStorage.lastname;
-    $scope.friend = '';
     $scope.convdata = '';
     $scope.input = '';
     $scope.online = false;
@@ -36,21 +35,19 @@ YanApp.controller("YanCtrl", function($scope, $http) {
     var rt;
     var conv;
 
-    var clientId;
+    var clientId = sessionStorage.myname;
 
     $scope.getcurr = function getcurr() {
+        debugger;
         var request = $http({
             method: 'get',
             url: '/chat',
             params: {}
         });
         request.then(function(data){
-            clientid = data.current;
+            clientId = data.current;
         });
     };
-
-
-    $scope.getcurr();
 
     rt = lc.realtime({
         appId: 'u5436v6b1afexcs4khaw9suogf81937tosvvl79krxe4i5i2',
@@ -58,23 +55,19 @@ YanApp.controller("YanCtrl", function($scope, $http) {
         clientId: clientId
     });
 
-
-    $scope.createConv = function createConv(friend) {
-            var tmp = rt.room({
+    var room1;
+    rt.on('open', function() {
+        room1 = rt.room({
             members: [
-                clientId, friend
+            clientId, GetRequest().go
             ],
             data: {
                 info: $scope.convdata
             }
-        }, function(result) {
-            if (!result.avError) {
-                $scope.conv[result.cid] = tmp;
-                cid = result.cid;
-            }
+        }, function() {
+            
         });
-    };
-    $scope.createConv(GetRequest().go);
+    });
 
     $scope.sendMsg = function sendMsg() {
         if ($scope.input == '') {
@@ -82,17 +75,20 @@ YanApp.controller("YanCtrl", function($scope, $http) {
             return;
         }
 
-        $scope.conv[cid].send({msg: $scope.input}, function(data) {
+        // $scope.conv[cid].send({msg: $scope.input}, function(data) {
+        //     $scope.$apply(function() {
+        //         $scope.log.push({'1': $scope.input});
+        //     });
+        // });
+
+        room1.send({msg: $scope.input}, function() {
             $scope.$apply(function() {
                 $scope.log.push({'1': $scope.input});
             });
         });
     };
 
-
     rt.on('message', function(data) {
-        console.log('message recv');
-        console.log(data);
         if (!$scope.conv.hasOwnProperty(data.cid)) {
             $scope.conv[data.cid] = rt.room(data.cid);
             cid = data.cid;

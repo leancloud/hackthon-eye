@@ -19,4 +19,9 @@ $(document).ready(function () {
 		function(data) {
 			showUsesrs(data);
 		});
+	$.get(
+		"/chat",
+		function(data) {
+			sessionStorage.myname=data.current;
+		});
 });

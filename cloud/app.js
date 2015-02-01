@@ -119,11 +119,11 @@ app.post('/register', function(req, res) {
 });
 
 app.get('/chat', function(req,res) {
-	var currentUser = AV.User.currrnt();
+	var currentUser = AV.User.current();
 	if (!currentUser) {
 		fail(res);
 	} else {
-		res.send({current: currentUser.get('objectid')});
+		res.send({current: currentUser.id});
 	}
 });
 
